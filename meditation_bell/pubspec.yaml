@@ -1,0 +1,31 @@
+name: meditation_bell
+description: A minimal meditation timer app with bell sounds and session tracking.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+  flutter: '>=3.10.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  provider: ^6.1.1
+  shared_preferences: ^2.2.2
+  audioplayers: ^5.2.1
+  vibration: ^1.9.0
+  wakelock_plus: ^1.1.4
+  flutter_background_service: ^5.0.5
+  flutter_local_notifications: ^17.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/audio/temple_bell.mp3
+    - assets/audio/singing_bowl.mp3
+    - assets/audio/soft_chime.mp3

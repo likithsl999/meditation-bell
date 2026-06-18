@@ -1,0 +1,5 @@
+# Rename this file to `local.properties` and set the correct paths.
+# This file is machine-specific and should NOT be committed to version control.
+
+sdk.dir=/path/to/Android/sdk
+flutter.sdk=/path/to/flutter
