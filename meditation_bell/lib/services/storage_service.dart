@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../models/custom_sound.dart';
 
 class StorageService {
   static const _keyTotalMinutes = 'total_meditation_minutes';
@@ -7,6 +9,7 @@ class StorageService {
   static const _keyLastSessionDate = 'last_session_date';
   static const _keyVibrationEnabled = 'vibration_enabled';
   static const _keyBellSound = 'bell_sound';
+  static const _keyCustomSounds = 'custom_sounds';
 
   final SharedPreferences _prefs;
 
@@ -17,17 +20,16 @@ class StorageService {
     return StorageService(prefs);
   }
 
-  // Stats
+  // ── Stats ────────────────────────────────────────────────────────────────
+
   int get totalMinutes => _prefs.getInt(_keyTotalMinutes) ?? 0;
   int get totalSessions => _prefs.getInt(_keyTotalSessions) ?? 0;
   int get currentStreak => _prefs.getInt(_keyCurrentStreak) ?? 0;
   String? get lastSessionDate => _prefs.getString(_keyLastSessionDate);
 
   Future<void> recordCompletedSession(int minutes) async {
-    final newTotal = totalMinutes + minutes;
-    final newSessions = totalSessions + 1;
-    await _prefs.setInt(_keyTotalMinutes, newTotal);
-    await _prefs.setInt(_keyTotalSessions, newSessions);
+    await _prefs.setInt(_keyTotalMinutes, totalMinutes + minutes);
+    await _prefs.setInt(_keyTotalSessions, totalSessions + 1);
     await _updateStreak();
   }
 
@@ -39,7 +41,8 @@ class StorageService {
       await _prefs.setInt(_keyCurrentStreak, 1);
     } else {
       final lastDate = DateTime.parse(last);
-      final yesterday = _dateString(DateTime.now().subtract(const Duration(days: 1)));
+      final yesterday =
+          _dateString(DateTime.now().subtract(const Duration(days: 1)));
 
       if (last == today) {
         // Already recorded today — no change
@@ -56,7 +59,8 @@ class StorageService {
   String _dateString(DateTime dt) =>
       '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
 
-  // Settings
+  // ── Settings ─────────────────────────────────────────────────────────────
+
   bool get vibrationEnabled => _prefs.getBool(_keyVibrationEnabled) ?? true;
   String get bellSound => _prefs.getString(_keyBellSound) ?? 'temple_bell';
 
@@ -65,4 +69,41 @@ class StorageService {
 
   Future<void> setBellSound(String value) =>
       _prefs.setString(_keyBellSound, value);
+
+  // ── Custom sounds ─────────────────────────────────────────────────────────
+
+  List<CustomSound> getCustomSounds() {
+    final raw = _prefs.getString(_keyCustomSounds);
+    if (raw == null) return [];
+    try {
+      final list = jsonDecode(raw) as List<dynamic>;
+      return list
+          .map((e) => CustomSound.fromMap(e as Map<String, dynamic>))
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<void> _saveCustomSounds(List<CustomSound> sounds) async {
+    final encoded = jsonEncode(sounds.map((s) => s.toMap()).toList());
+    await _prefs.setString(_keyCustomSounds, encoded);
+  }
+
+  Future<void> addCustomSound(CustomSound sound) async {
+    final list = getCustomSounds()..add(sound);
+    await _saveCustomSounds(list);
+  }
+
+  Future<void> deleteCustomSound(String id) async {
+    final list = getCustomSounds()..removeWhere((s) => s.id == id);
+    await _saveCustomSounds(list);
+  }
+
+  Future<void> renameCustomSound(String id, String newName) async {
+    final list = getCustomSounds()
+        .map((s) => s.id == id ? s.copyWith(name: newName) : s)
+        .toList();
+    await _saveCustomSounds(list);
+  }
 }

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import 'models/app_settings.dart';
 import 'providers/meditation_provider.dart';
 import 'providers/settings_provider.dart';
 import 'providers/stats_provider.dart';
@@ -29,7 +28,7 @@ void main() async {
         Provider<StorageService>.value(value: storage),
         Provider<AudioService>.value(value: audio),
         ChangeNotifierProvider(
-          create: (_) => SettingsProvider(storage),
+          create: (_) => SettingsProvider(storage, audio),
         ),
         ChangeNotifierProvider(
           create: (_) => StatsProvider(storage),

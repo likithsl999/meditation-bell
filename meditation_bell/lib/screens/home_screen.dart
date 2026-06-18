@@ -57,6 +57,7 @@ class _HomeScreenState extends State<HomeScreen> {
       intervalSeconds: _selectedInterval,
       bellSound: settings.bellSound,
       vibrate: settings.vibrationEnabled,
+      customSounds: settings.customSounds,
     );
 
     Navigator.of(context).push(
@@ -92,19 +93,13 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Header
-              Icon(
-                Icons.circle_outlined,
-                size: 72,
-                color: colorScheme.primary,
-              ),
+              Icon(Icons.circle_outlined, size: 72, color: colorScheme.primary),
               const SizedBox(height: 12),
               Text(
                 'Find your stillness',
                 textAlign: TextAlign.center,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
+                style: theme.textTheme.bodyLarge
+                    ?.copyWith(color: colorScheme.onSurfaceVariant),
               ),
               const SizedBox(height: 40),
 
@@ -112,16 +107,14 @@ class _HomeScreenState extends State<HomeScreen> {
               Text(
                 'Session Duration',
                 style: theme.textTheme.titleMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                  letterSpacing: 0.5,
-                ),
+                    color: colorScheme.onSurfaceVariant, letterSpacing: 0.5),
               ),
               const SizedBox(height: 12),
               Wrap(
                 spacing: 10,
                 runSpacing: 10,
                 children: [
-                  ..._durations.map((d) => _DurationChip(
+                  ..._durations.map((d) => _Chip(
                         label: '$d min',
                         selected: !_customDuration && _selectedDuration == d,
                         onTap: () => setState(() {
@@ -129,7 +122,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           _customDuration = false;
                         }),
                       )),
-                  _DurationChip(
+                  _Chip(
                     label: 'Custom',
                     selected: _customDuration,
                     onTap: () => setState(() => _customDuration = true),
@@ -145,8 +138,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   decoration: InputDecoration(
                     labelText: 'Duration (minutes)',
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                        borderRadius: BorderRadius.circular(12)),
                     suffixText: 'min',
                   ),
                 ),
@@ -158,39 +150,33 @@ class _HomeScreenState extends State<HomeScreen> {
               Text(
                 'Bell Interval',
                 style: theme.textTheme.titleMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                  letterSpacing: 0.5,
-                ),
+                    color: colorScheme.onSurfaceVariant, letterSpacing: 0.5),
               ),
               const SizedBox(height: 12),
               Wrap(
                 spacing: 10,
                 runSpacing: 10,
                 children: _intervals
-                    .map((i) => _DurationChip(
+                    .map((i) => _Chip(
                           label: i['label'] as String,
                           selected: _selectedInterval == i['value'],
-                          onTap: () =>
-                              setState(() => _selectedInterval = i['value'] as int),
+                          onTap: () => setState(
+                              () => _selectedInterval = i['value'] as int),
                         ))
                     .toList(),
               ),
 
               const SizedBox(height: 48),
 
-              // Start button
               FilledButton.icon(
                 onPressed: () => _startSession(context),
                 icon: const Icon(Icons.play_arrow_rounded, size: 24),
-                label: const Text(
-                  'Begin Session',
-                  style: TextStyle(fontSize: 18, letterSpacing: 0.5),
-                ),
+                label: const Text('Begin Session',
+                    style: TextStyle(fontSize: 18, letterSpacing: 0.5)),
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 18),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
+                      borderRadius: BorderRadius.circular(16)),
                 ),
               ),
             ],
@@ -201,16 +187,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class _DurationChip extends StatelessWidget {
+class _Chip extends StatelessWidget {
   final String label;
   final bool selected;
   final VoidCallback onTap;
 
-  const _DurationChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
+  const _Chip(
+      {required this.label, required this.selected, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -219,9 +202,12 @@ class _DurationChip extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         decoration: BoxDecoration(
-          color: selected ? colorScheme.primary : colorScheme.surfaceContainerHigh,
+          color: selected
+              ? colorScheme.primary
+              : colorScheme.surfaceContainerHigh,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: selected ? colorScheme.primary : Colors.transparent,
@@ -231,8 +217,10 @@ class _DurationChip extends StatelessWidget {
         child: Text(
           label,
           style: TextStyle(
-            color: selected ? colorScheme.onPrimary : colorScheme.onSurface,
-            fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+            color:
+                selected ? colorScheme.onPrimary : colorScheme.onSurface,
+            fontWeight:
+                selected ? FontWeight.w600 : FontWeight.w400,
             fontSize: 15,
           ),
         ),

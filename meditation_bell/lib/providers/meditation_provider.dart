@@ -2,9 +2,10 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:vibration/vibration.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
+import '../models/custom_sound.dart';
+import '../models/meditation_session.dart';
 import '../services/audio_service.dart';
 import '../services/storage_service.dart';
-import '../models/meditation_session.dart';
 
 enum MeditationState { idle, running, paused, finished }
 
@@ -20,6 +21,14 @@ class MeditationProvider extends ChangeNotifier {
   int _remainingSeconds = 0;
   int _secondsSinceLastBell = 0;
   Timer? _ticker;
+
+  // Captured at session start so the sound stays consistent even if settings
+  // change mid-session.
+  String _activeBellSound = 'temple_bell';
+  List<CustomSound> _activeCustomSounds = const [];
+  bool _activeVibrate = false;
+
+  // ── Getters ───────────────────────────────────────────────────────────────
 
   MeditationState get state => _state;
   MeditationSession? get session => _session;
@@ -37,11 +46,14 @@ class MeditationProvider extends ChangeNotifier {
   bool get isActive =>
       _state == MeditationState.running || _state == MeditationState.paused;
 
+  // ── Session lifecycle ─────────────────────────────────────────────────────
+
   Future<void> start({
     required int durationMinutes,
     required int intervalSeconds,
     required String bellSound,
     required bool vibrate,
+    List<CustomSound> customSounds = const [],
   }) async {
     _session = MeditationSession(
       durationMinutes: durationMinutes,
@@ -52,15 +64,19 @@ class MeditationProvider extends ChangeNotifier {
     _secondsSinceLastBell = 0;
     _state = MeditationState.running;
 
+    _activeBellSound = bellSound;
+    _activeCustomSounds = customSounds;
+    _activeVibrate = vibrate;
+
     await WakelockPlus.enable();
-    await _audio.playBell(bellSound);
+    await _audio.playBell(bellSound, customSounds: customSounds);
     if (vibrate) _triggerVibration();
 
-    _startTicker(bellSound: bellSound, vibrate: vibrate);
+    _startTicker();
     notifyListeners();
   }
 
-  void _startTicker({required String bellSound, required bool vibrate}) {
+  void _startTicker() {
     _ticker?.cancel();
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) async {
       if (_state != MeditationState.running) return;
@@ -71,12 +87,13 @@ class MeditationProvider extends ChangeNotifier {
       final intervalSec = _session!.intervalSeconds;
       if (_secondsSinceLastBell >= intervalSec && _remainingSeconds > 0) {
         _secondsSinceLastBell = 0;
-        await _audio.playBell(bellSound);
-        if (vibrate) _triggerVibration();
+        await _audio.playBell(_activeBellSound,
+            customSounds: _activeCustomSounds);
+        if (_activeVibrate) _triggerVibration();
       }
 
       if (_remainingSeconds <= 0) {
-        await _finish(bellSound: bellSound, vibrate: vibrate);
+        await _finish();
         return;
       }
 
@@ -84,14 +101,11 @@ class MeditationProvider extends ChangeNotifier {
     });
   }
 
-  Future<void> _finish({
-    required String bellSound,
-    required bool vibrate,
-  }) async {
+  Future<void> _finish() async {
     _ticker?.cancel();
     _state = MeditationState.finished;
-    await _audio.playBell(bellSound);
-    if (vibrate) _triggerVibration();
+    await _audio.playBell(_activeBellSound, customSounds: _activeCustomSounds);
+    if (_activeVibrate) _triggerVibration();
     await WakelockPlus.disable();
     await _storage.recordCompletedSession(_session!.durationMinutes);
     notifyListeners();
@@ -104,10 +118,10 @@ class MeditationProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void resume({required String bellSound, required bool vibrate}) {
+  void resume() {
     if (_state != MeditationState.paused) return;
     _state = MeditationState.running;
-    _startTicker(bellSound: bellSound, vibrate: vibrate);
+    _startTicker();
     notifyListeners();
   }
 
@@ -121,12 +135,12 @@ class MeditationProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ── Haptics ───────────────────────────────────────────────────────────────
+
   void _triggerVibration() async {
     try {
-      final hasVibrator = await Vibration.hasVibrator() ?? false;
-      if (hasVibrator) {
-        Vibration.vibrate(pattern: [0, 300, 100, 300]);
-      }
+      final has = await Vibration.hasVibrator() ?? false;
+      if (has) Vibration.vibrate(pattern: [0, 300, 100, 300]);
     } catch (_) {}
   }
 
