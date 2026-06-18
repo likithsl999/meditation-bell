@@ -10,6 +10,8 @@ class StorageService {
   static const _keyVibrationEnabled = 'vibration_enabled';
   static const _keyBellSound = 'bell_sound';
   static const _keyCustomSounds = 'custom_sounds';
+  static const _keyBellVolume = 'bell_volume';
+  static const _keyBackgroundVolume = 'background_volume';
 
   final SharedPreferences _prefs;
 
@@ -20,7 +22,7 @@ class StorageService {
     return StorageService(prefs);
   }
 
-  // ── Stats ────────────────────────────────────────────────────────────────
+  // ── Stats ─────────────────────────────────────────────────────────────────
 
   int get totalMinutes => _prefs.getInt(_keyTotalMinutes) ?? 0;
   int get totalSessions => _prefs.getInt(_keyTotalSessions) ?? 0;
@@ -43,7 +45,6 @@ class StorageService {
       final lastDate = DateTime.parse(last);
       final yesterday =
           _dateString(DateTime.now().subtract(const Duration(days: 1)));
-
       if (last == today) {
         // Already recorded today — no change
       } else if (_dateString(lastDate) == yesterday) {
@@ -52,23 +53,27 @@ class StorageService {
         await _prefs.setInt(_keyCurrentStreak, 1);
       }
     }
-
     await _prefs.setString(_keyLastSessionDate, today);
   }
 
   String _dateString(DateTime dt) =>
       '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
 
-  // ── Settings ─────────────────────────────────────────────────────────────
+  // ── Settings ──────────────────────────────────────────────────────────────
 
   bool get vibrationEnabled => _prefs.getBool(_keyVibrationEnabled) ?? true;
   String get bellSound => _prefs.getString(_keyBellSound) ?? 'temple_bell';
+  double get bellVolume => _prefs.getDouble(_keyBellVolume) ?? 1.0;
+  double get backgroundVolume => _prefs.getDouble(_keyBackgroundVolume) ?? 0.0;
 
   Future<void> setVibrationEnabled(bool value) =>
       _prefs.setBool(_keyVibrationEnabled, value);
-
   Future<void> setBellSound(String value) =>
       _prefs.setString(_keyBellSound, value);
+  Future<void> setBellVolume(double value) =>
+      _prefs.setDouble(_keyBellVolume, value);
+  Future<void> setBackgroundVolume(double value) =>
+      _prefs.setDouble(_keyBackgroundVolume, value);
 
   // ── Custom sounds ─────────────────────────────────────────────────────────
 

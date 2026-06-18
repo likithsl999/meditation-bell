@@ -1,31 +1,29 @@
 class AppSettings {
   final bool vibrationEnabled;
   final String bellSound;
+  final double bellVolume;
+  final double backgroundVolume;
 
   const AppSettings({
     this.vibrationEnabled = true,
     this.bellSound = 'temple_bell',
+    this.bellVolume = 1.0,
+    this.backgroundVolume = 0.0,
   });
 
   AppSettings copyWith({
     bool? vibrationEnabled,
     String? bellSound,
+    double? bellVolume,
+    double? backgroundVolume,
   }) {
     return AppSettings(
       vibrationEnabled: vibrationEnabled ?? this.vibrationEnabled,
       bellSound: bellSound ?? this.bellSound,
+      bellVolume: bellVolume ?? this.bellVolume,
+      backgroundVolume: backgroundVolume ?? this.backgroundVolume,
     );
   }
-
-  Map<String, dynamic> toMap() => {
-        'vibrationEnabled': vibrationEnabled,
-        'bellSound': bellSound,
-      };
-
-  factory AppSettings.fromMap(Map<String, dynamic> map) => AppSettings(
-        vibrationEnabled: map['vibrationEnabled'] as bool? ?? true,
-        bellSound: map['bellSound'] as String? ?? 'temple_bell',
-      );
 
   static const List<String> bellSoundOptions = [
     'temple_bell',

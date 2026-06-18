@@ -22,6 +22,27 @@ class SettingsScreen extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
           children: [
+            // ── Volume ─────────────────────────────────────────────────────
+            _SectionLabel('Volume'),
+            const SizedBox(height: 16),
+
+            _VolumeRow(
+              icon: Icons.notifications_rounded,
+              label: 'Bell',
+              value: settings.bellVolume,
+              onChanged: (v) => settings.setBellVolume(v),
+              onChangeEnd: (_) => settings.previewBuiltIn(settings.bellSound),
+            ),
+            const SizedBox(height: 8),
+            _VolumeRow(
+              icon: Icons.forest_rounded,
+              label: 'Ambient',
+              value: settings.backgroundVolume,
+              onChanged: (v) => settings.setBackgroundVolume(v),
+            ),
+
+            const SizedBox(height: 32),
+
             // ── Bell Sound (built-in) ──────────────────────────────────────
             _SectionLabel('Bell Sound'),
             const SizedBox(height: 12),
@@ -37,7 +58,6 @@ class SettingsScreen extends StatelessWidget {
                   ),
                 )),
 
-            // ── Custom sounds in selection ─────────────────────────────────
             if (settings.customSounds.isNotEmpty) ...[
               const SizedBox(height: 8),
               Divider(color: colorScheme.outlineVariant),
@@ -58,7 +78,7 @@ class SettingsScreen extends StatelessWidget {
 
             const SizedBox(height: 32),
 
-            // ── Haptics ───────────────────────────────────────────────────
+            // ── Haptics ────────────────────────────────────────────────────
             _SectionLabel('Haptics'),
             const SizedBox(height: 12),
             Container(
@@ -82,7 +102,7 @@ class SettingsScreen extends StatelessWidget {
 
             const SizedBox(height: 32),
 
-            // ── Custom sounds management ──────────────────────────────────
+            // ── Custom sounds management ───────────────────────────────────
             Row(
               children: [
                 Expanded(child: _SectionLabel('Custom Sounds')),
@@ -96,9 +116,9 @@ class SettingsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
-            // Import button
             OutlinedButton.icon(
-              onPressed: settings.importing ? null : () => settings.importSound(),
+              onPressed:
+                  settings.importing ? null : () => settings.importSound(),
               icon: const Icon(Icons.audio_file_rounded),
               label: const Text('Import MP3'),
               style: OutlinedButton.styleFrom(
@@ -117,7 +137,6 @@ class SettingsScreen extends StatelessWidget {
               ),
             ],
 
-            // Imported sounds list
             if (settings.customSounds.isEmpty) ...[
               const SizedBox(height: 20),
               Text(
@@ -148,7 +167,89 @@ class SettingsScreen extends StatelessWidget {
   }
 }
 
-// ── Reusable widgets ──────────────────────────────────────────────────────────
+// ── Volume row ────────────────────────────────────────────────────────────────
+
+class _VolumeRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final double value;
+  final ValueChanged<double> onChanged;
+  final ValueChanged<double>? onChangeEnd;
+
+  const _VolumeRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.onChanged,
+    this.onChangeEnd,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final pct = (value * 100).round();
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: colorScheme.primary),
+          const SizedBox(width: 12),
+          SizedBox(
+            width: 52,
+            child: Text(
+              label,
+              style: theme.textTheme.bodyMedium
+                  ?.copyWith(color: colorScheme.onSurface),
+            ),
+          ),
+          Expanded(
+            child: SliderTheme(
+              data: SliderTheme.of(context).copyWith(
+                trackHeight: 3,
+                thumbShape:
+                    const RoundSliderThumbShape(enabledThumbRadius: 7),
+                overlayShape:
+                    const RoundSliderOverlayShape(overlayRadius: 16),
+                activeTrackColor: colorScheme.primary,
+                inactiveTrackColor:
+                    colorScheme.primary.withOpacity(0.2),
+                thumbColor: colorScheme.primary,
+                overlayColor: colorScheme.primary.withOpacity(0.15),
+              ),
+              child: Slider(
+                value: value,
+                min: 0.0,
+                max: 1.0,
+                divisions: 20,
+                onChanged: onChanged,
+                onChangeEnd: onChangeEnd,
+              ),
+            ),
+          ),
+          SizedBox(
+            width: 36,
+            child: Text(
+              '$pct%',
+              textAlign: TextAlign.right,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Shared widgets ────────────────────────────────────────────────────────────
 
 class _SectionLabel extends StatelessWidget {
   final String text;
@@ -187,7 +288,8 @@ class _SoundTile extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         decoration: BoxDecoration(
           color: selected
               ? colorScheme.primaryContainer
@@ -201,7 +303,9 @@ class _SoundTile extends StatelessWidget {
         child: Row(
           children: [
             Icon(
-              isCustom ? Icons.audio_file_rounded : Icons.music_note_rounded,
+              isCustom
+                  ? Icons.audio_file_rounded
+                  : Icons.music_note_rounded,
               size: 20,
               color: selected
                   ? colorScheme.onPrimaryContainer
@@ -251,15 +355,12 @@ class _CustomSoundRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Play preview
           IconButton(
             icon: Icon(Icons.play_circle_outline_rounded,
                 color: colorScheme.primary),
             tooltip: 'Preview',
             onPressed: () => settings.previewSound(sound),
           ),
-
-          // Name
           Expanded(
             child: Text(
               sound.name,
@@ -268,16 +369,12 @@ class _CustomSoundRow extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ),
-
-          // Rename
           IconButton(
             icon: Icon(Icons.edit_outlined,
                 size: 20, color: colorScheme.onSurfaceVariant),
             tooltip: 'Rename',
             onPressed: () => _showRenameDialog(context, settings),
           ),
-
-          // Delete
           IconButton(
             icon: Icon(Icons.delete_outline_rounded,
                 size: 20, color: colorScheme.error),

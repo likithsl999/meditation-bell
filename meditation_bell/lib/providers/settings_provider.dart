@@ -21,8 +21,14 @@ class SettingsProvider extends ChangeNotifier {
     _settings = AppSettings(
       vibrationEnabled: _storage.vibrationEnabled,
       bellSound: _storage.bellSound,
+      bellVolume: _storage.bellVolume,
+      backgroundVolume: _storage.backgroundVolume,
     );
     _customSounds = _storage.getCustomSounds();
+
+    // Apply persisted volumes immediately on startup
+    _audio.setBellVolume(_settings.bellVolume);
+    _audio.setBackgroundVolume(_settings.backgroundVolume);
   }
 
   // ── Getters ───────────────────────────────────────────────────────────────
@@ -30,12 +36,11 @@ class SettingsProvider extends ChangeNotifier {
   AppSettings get settings => _settings;
   bool get vibrationEnabled => _settings.vibrationEnabled;
   String get bellSound => _settings.bellSound;
+  double get bellVolume => _settings.bellVolume;
+  double get backgroundVolume => _settings.backgroundVolume;
   List<CustomSound> get customSounds => List.unmodifiable(_customSounds);
   bool get importing => _importing;
   String? get importError => _importError;
-
-  bool get selectedSoundIsCustom =>
-      _customSounds.any((s) => s.id == _settings.bellSound);
 
   // ── Settings mutations ────────────────────────────────────────────────────
 
@@ -48,6 +53,20 @@ class SettingsProvider extends ChangeNotifier {
   Future<void> setBellSound(String value) async {
     _settings = _settings.copyWith(bellSound: value);
     await _storage.setBellSound(value);
+    notifyListeners();
+  }
+
+  Future<void> setBellVolume(double value) async {
+    _settings = _settings.copyWith(bellVolume: value);
+    _audio.setBellVolume(value);          // apply immediately
+    await _storage.setBellVolume(value);
+    notifyListeners();
+  }
+
+  Future<void> setBackgroundVolume(double value) async {
+    _settings = _settings.copyWith(backgroundVolume: value);
+    _audio.setBackgroundVolume(value);    // apply immediately
+    await _storage.setBackgroundVolume(value);
     notifyListeners();
   }
 
@@ -87,8 +106,10 @@ class SettingsProvider extends ChangeNotifier {
 
         await File(sourcePath).copy(destPath);
 
-        final rawName = file.name.replaceAll(RegExp(r'\.mp3$', caseSensitive: false), '');
-        final sound = CustomSound(id: id, name: rawName, filePath: destPath);
+        final rawName = file.name
+            .replaceAll(RegExp(r'\.mp3$', caseSensitive: false), '');
+        final sound =
+            CustomSound(id: id, name: rawName, filePath: destPath);
 
         await _storage.addCustomSound(sound);
         _customSounds.add(sound);
@@ -107,7 +128,6 @@ class SettingsProvider extends ChangeNotifier {
     final sound = _customSounds.firstWhere((s) => s.id == id,
         orElse: () => throw StateError('Sound not found'));
 
-    // If the deleted sound is currently selected, fall back to the first built-in.
     if (_settings.bellSound == id) {
       await setBellSound(AppSettings.bellSoundOptions.first);
     }
