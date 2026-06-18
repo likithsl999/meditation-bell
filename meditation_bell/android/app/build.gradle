@@ -10,16 +10,17 @@ android {
     ndkVersion flutter.ndkVersion
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
 
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "11"
     }
 
     defaultConfig {
         applicationId "com.example.meditation_bell"
+        // file_picker requires API 21; READ_MEDIA_AUDIO available on 33+
         minSdk 21
         targetSdk flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()

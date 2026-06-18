@@ -17,13 +17,16 @@ class MeditationProvider extends ChangeNotifier {
 
   MeditationState _state = MeditationState.idle;
   MeditationSession? _session;
-
-  int _remainingSeconds = 0;
-  int _secondsSinceLastBell = 0;
   Timer? _ticker;
 
-  // Captured at session start so the sound stays consistent even if settings
-  // change mid-session.
+  // DateTime-based tracking — accurate even when ticks are throttled.
+  DateTime? _sessionEndTime;
+  DateTime? _nextBellTime;
+  DateTime? _pausedAt;  // set when paused, used to shift end/bell times on resume
+
+  int _remainingSeconds = 0;
+
+  // Captured at session start — sound stays consistent even if settings change mid-session.
   String _activeBellSound = 'temple_bell';
   List<CustomSound> _activeCustomSounds = const [];
   bool _activeVibrate = false;
@@ -55,13 +58,16 @@ class MeditationProvider extends ChangeNotifier {
     required bool vibrate,
     List<CustomSound> customSounds = const [],
   }) async {
+    final now = DateTime.now();
     _session = MeditationSession(
       durationMinutes: durationMinutes,
       intervalSeconds: intervalSeconds,
-      startedAt: DateTime.now(),
+      startedAt: now,
     );
     _remainingSeconds = durationMinutes * 60;
-    _secondsSinceLastBell = 0;
+    _sessionEndTime = now.add(Duration(minutes: durationMinutes));
+    _nextBellTime = now.add(Duration(seconds: intervalSeconds));
+    _pausedAt = null;
     _state = MeditationState.running;
 
     _activeBellSound = bellSound;
@@ -81,20 +87,29 @@ class MeditationProvider extends ChangeNotifier {
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) async {
       if (_state != MeditationState.running) return;
 
-      _remainingSeconds--;
-      _secondsSinceLastBell++;
+      final now = DateTime.now();
+      final remaining = _sessionEndTime!.difference(now).inSeconds;
 
-      final intervalSec = _session!.intervalSeconds;
-      if (_secondsSinceLastBell >= intervalSec && _remainingSeconds > 0) {
-        _secondsSinceLastBell = 0;
+      if (remaining <= 0) {
+        _remainingSeconds = 0;
+        notifyListeners();
+        await _finish();
+        return;
+      }
+
+      _remainingSeconds = remaining;
+
+      // Ring the bell when the next scheduled bell time has passed.
+      if (_nextBellTime != null && now.isAfter(_nextBellTime!)) {
+        // Advance to the next interval (catch-up if multiple ticks were missed).
+        final intervalSec = _session!.intervalSeconds;
+        while (_nextBellTime!.isBefore(now)) {
+          _nextBellTime =
+              _nextBellTime!.add(Duration(seconds: intervalSec));
+        }
         await _audio.playBell(_activeBellSound,
             customSounds: _activeCustomSounds);
         if (_activeVibrate) _triggerVibration();
-      }
-
-      if (_remainingSeconds <= 0) {
-        await _finish();
-        return;
       }
 
       notifyListeners();
@@ -113,6 +128,7 @@ class MeditationProvider extends ChangeNotifier {
 
   void pause() {
     if (_state != MeditationState.running) return;
+    _pausedAt = DateTime.now();
     _state = MeditationState.paused;
     _ticker?.cancel();
     notifyListeners();
@@ -120,6 +136,20 @@ class MeditationProvider extends ChangeNotifier {
 
   void resume() {
     if (_state != MeditationState.paused) return;
+
+    // Shift the end time and next bell time forward by the duration we were paused,
+    // so the timer remains accurate.
+    if (_pausedAt != null) {
+      final pausedDuration = DateTime.now().difference(_pausedAt!);
+      if (_sessionEndTime != null) {
+        _sessionEndTime = _sessionEndTime!.add(pausedDuration);
+      }
+      if (_nextBellTime != null) {
+        _nextBellTime = _nextBellTime!.add(pausedDuration);
+      }
+      _pausedAt = null;
+    }
+
     _state = MeditationState.running;
     _startTicker();
     notifyListeners();
@@ -130,13 +160,16 @@ class MeditationProvider extends ChangeNotifier {
     _state = MeditationState.idle;
     _session = null;
     _remainingSeconds = 0;
-    _secondsSinceLastBell = 0;
+    _sessionEndTime = null;
+    _nextBellTime = null;
+    _pausedAt = null;
     await WakelockPlus.disable();
     notifyListeners();
   }
 
   // ── Haptics ───────────────────────────────────────────────────────────────
 
+  // ignore: avoid_void_async
   void _triggerVibration() async {
     try {
       final has = await Vibration.hasVibrator() ?? false;

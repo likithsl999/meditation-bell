@@ -102,7 +102,7 @@ class SettingsScreen extends StatelessWidget {
 
             const SizedBox(height: 32),
 
-            // ── Custom sounds management ───────────────────────────────────
+            // ── Custom sounds ──────────────────────────────────────────────
             Row(
               children: [
                 Expanded(child: _SectionLabel('Custom Sounds')),
@@ -147,9 +147,7 @@ class SettingsScreen extends StatelessWidget {
               ),
             ] else ...[
               const SizedBox(height: 16),
-              ...settings.customSounds
-                  .map((s) => _CustomSoundRow(sound: s))
-                  .toList(),
+              ...settings.customSounds.map((s) => _CustomSoundRow(sound: s)),
             ],
 
             const SizedBox(height: 32),
@@ -218,9 +216,9 @@ class _VolumeRow extends StatelessWidget {
                     const RoundSliderOverlayShape(overlayRadius: 16),
                 activeTrackColor: colorScheme.primary,
                 inactiveTrackColor:
-                    colorScheme.primary.withOpacity(0.2),
+                    colorScheme.primary.withValues(alpha: 0.2),
                 thumbColor: colorScheme.primary,
-                overlayColor: colorScheme.primary.withOpacity(0.15),
+                overlayColor: colorScheme.primary.withValues(alpha: 0.15),
               ),
               child: Slider(
                 value: value,
@@ -249,7 +247,7 @@ class _VolumeRow extends StatelessWidget {
   }
 }
 
-// ── Shared widgets ────────────────────────────────────────────────────────────
+// ── Section label ─────────────────────────────────────────────────────────────
 
 class _SectionLabel extends StatelessWidget {
   final String text;
@@ -267,6 +265,8 @@ class _SectionLabel extends StatelessWidget {
     );
   }
 }
+
+// ── Sound tile ────────────────────────────────────────────────────────────────
 
 class _SoundTile extends StatelessWidget {
   final String label;
@@ -335,6 +335,8 @@ class _SoundTile extends StatelessWidget {
     );
   }
 }
+
+// ── Custom sound row ──────────────────────────────────────────────────────────
 
 class _CustomSoundRow extends StatelessWidget {
   final CustomSound sound;

@@ -31,11 +31,12 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  void _startSession(BuildContext context) {
+  Future<void> _startSession(BuildContext context) async {
     int duration = _selectedDuration;
     if (_customDuration) {
       final val = int.tryParse(_customController.text.trim());
       if (val == null || val <= 0) {
+        if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Enter a valid duration in minutes.')),
         );
@@ -44,6 +45,7 @@ class _HomeScreenState extends State<HomeScreen> {
       duration = val;
     }
     if (duration < 1) {
+      if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Minimum session duration is 1 minute.')),
       );
@@ -52,7 +54,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final settings = context.read<SettingsProvider>();
     final meditation = context.read<MeditationProvider>();
-    meditation.start(
+
+    // Await start so timers and state are set before the screen transitions.
+    await meditation.start(
       durationMinutes: duration,
       intervalSeconds: _selectedInterval,
       bellSound: settings.bellSound,
@@ -60,6 +64,7 @@ class _HomeScreenState extends State<HomeScreen> {
       customSounds: settings.customSounds,
     );
 
+    if (!context.mounted) return;
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const MeditationScreen()),
     );

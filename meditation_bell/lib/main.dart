@@ -22,6 +22,9 @@ void main() async {
   final storage = await StorageService.create();
   final audio = AudioService();
 
+  // Configure audio session (background playback, audio focus, Bluetooth).
+  await audio.init();
+
   runApp(
     MultiProvider(
       providers: [

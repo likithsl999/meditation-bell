@@ -227,7 +227,7 @@ class _BreathingRingState extends State<_BreathingRing>
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           border: Border.all(
-              color: colorScheme.primary.withOpacity(0.4), width: 2),
+              color: colorScheme.primary.withValues(alpha: 0.4), width: 2),
         ),
         child: Center(
           child: Container(
@@ -235,9 +235,10 @@ class _BreathingRingState extends State<_BreathingRing>
             height: 100,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: colorScheme.primary.withOpacity(0.12),
+              color: colorScheme.primary.withValues(alpha: 0.12),
               border: Border.all(
-                  color: colorScheme.primary.withOpacity(0.6), width: 1.5),
+                  color: colorScheme.primary.withValues(alpha: 0.6),
+                  width: 1.5),
             ),
             child: Icon(Icons.self_improvement_rounded,
                 size: 40, color: colorScheme.primary),

@@ -11,6 +11,30 @@ class AudioService {
   double _bellVolume = 1.0;
   double _backgroundVolume = 0.0;
 
+  // ── Initialisation ────────────────────────────────────────────────────────
+  // Must be called once from main() before runApp().
+
+  Future<void> init() async {
+    const ctx = AudioContext(
+      android: AudioContextAndroid(
+        isSpeakerphoneOn: false,
+        stayAwake: false,
+        contentType: AndroidContentType.music,
+        usageType: AndroidUsageType.media,
+        audioFocus: AndroidAudioFocus.gain,
+      ),
+      iOS: AudioContextIOS(
+        defaultToSpeaker: false,
+        category: AVAudioSessionCategory.playback,
+        options: {
+          AVAudioSessionOptions.allowBluetooth,
+          AVAudioSessionOptions.allowBluetoothA2DP,
+        },
+      ),
+    );
+    await AudioPlayer.global.setAudioContext(ctx);
+  }
+
   // ── Volume ────────────────────────────────────────────────────────────────
 
   void setBellVolume(double volume) {
@@ -36,13 +60,13 @@ class AudioService {
       if (_builtInSounds.contains(soundKey)) {
         await _bellPlayer.play(AssetSource('audio/$soundKey.mp3'));
       } else {
-        final matches = customSounds.where((s) => s.id == soundKey).toList();
-        if (matches.isNotEmpty) {
-          await _bellPlayer.play(DeviceFileSource(matches.first.filePath));
+        final match = customSounds.where((s) => s.id == soundKey).firstOrNull;
+        if (match != null) {
+          await _bellPlayer.play(DeviceFileSource(match.filePath));
         }
       }
     } catch (_) {
-      // Graceful degradation — sound failure must not break the session.
+      // Graceful degradation — sound failure must never break the session.
     }
   }
 
@@ -54,10 +78,9 @@ class AudioService {
     } catch (_) {}
   }
 
-  // ── Background (ambient) ──────────────────────────────────────────────────
+  // ── Background / ambient ──────────────────────────────────────────────────
 
-  /// Starts looping an ambient background sound from an asset path.
-  /// Pass [assetPath] as e.g. 'audio/rain.mp3'. If null, stops playback.
+  /// Pass [assetPath] as e.g. 'audio/rain.mp3'.  Pass null to stop.
   Future<void> playBackground(String? assetPath) async {
     try {
       if (assetPath == null) {
