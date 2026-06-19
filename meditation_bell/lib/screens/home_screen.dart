@@ -55,12 +55,12 @@ class _HomeScreenState extends State<HomeScreen> {
     final settings = context.read<SettingsProvider>();
     final meditation = context.read<MeditationProvider>();
 
-    // Await start so timers and state are set before the screen transitions.
     await meditation.start(
       durationMinutes: duration,
       intervalSeconds: _selectedInterval,
       bellSound: settings.bellSound,
       vibrate: settings.vibrationEnabled,
+      backgroundSound: settings.backgroundSound,
       customSounds: settings.customSounds,
     );
 
@@ -207,8 +207,7 @@ class _Chip extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding:
-            const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         decoration: BoxDecoration(
           color: selected
               ? colorScheme.primary
@@ -222,10 +221,8 @@ class _Chip extends StatelessWidget {
         child: Text(
           label,
           style: TextStyle(
-            color:
-                selected ? colorScheme.onPrimary : colorScheme.onSurface,
-            fontWeight:
-                selected ? FontWeight.w600 : FontWeight.w400,
+            color: selected ? colorScheme.onPrimary : colorScheme.onSurface,
+            fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
             fontSize: 15,
           ),
         ),

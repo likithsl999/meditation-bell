@@ -23,10 +23,11 @@ class SettingsProvider extends ChangeNotifier {
       bellSound: _storage.bellSound,
       bellVolume: _storage.bellVolume,
       backgroundVolume: _storage.backgroundVolume,
+      backgroundSound: _storage.backgroundSound,
     );
     _customSounds = _storage.getCustomSounds();
 
-    // Apply persisted volumes immediately on startup
+    // Apply persisted volumes immediately on startup.
     _audio.setBellVolume(_settings.bellVolume);
     _audio.setBackgroundVolume(_settings.backgroundVolume);
   }
@@ -38,11 +39,12 @@ class SettingsProvider extends ChangeNotifier {
   String get bellSound => _settings.bellSound;
   double get bellVolume => _settings.bellVolume;
   double get backgroundVolume => _settings.backgroundVolume;
+  String? get backgroundSound => _settings.backgroundSound;
   List<CustomSound> get customSounds => List.unmodifiable(_customSounds);
   bool get importing => _importing;
   String? get importError => _importError;
 
-  // ── Settings mutations ────────────────────────────────────────────────────
+  // ── Mutations ─────────────────────────────────────────────────────────────
 
   Future<void> setVibrationEnabled(bool value) async {
     _settings = _settings.copyWith(vibrationEnabled: value);
@@ -58,15 +60,22 @@ class SettingsProvider extends ChangeNotifier {
 
   Future<void> setBellVolume(double value) async {
     _settings = _settings.copyWith(bellVolume: value);
-    _audio.setBellVolume(value);          // apply immediately
+    _audio.setBellVolume(value);
     await _storage.setBellVolume(value);
     notifyListeners();
   }
 
   Future<void> setBackgroundVolume(double value) async {
     _settings = _settings.copyWith(backgroundVolume: value);
-    _audio.setBackgroundVolume(value);    // apply immediately
+    _audio.setBackgroundVolume(value);
     await _storage.setBackgroundVolume(value);
+    notifyListeners();
+  }
+
+  /// null = no background sound, 'rain' = built-in rain loop.
+  Future<void> setBackgroundSound(String? value) async {
+    _settings = _settings.copyWith(backgroundSound: value);
+    await _storage.setBackgroundSound(value);
     notifyListeners();
   }
 
@@ -108,8 +117,7 @@ class SettingsProvider extends ChangeNotifier {
 
         final rawName = file.name
             .replaceAll(RegExp(r'\.mp3$', caseSensitive: false), '');
-        final sound =
-            CustomSound(id: id, name: rawName, filePath: destPath);
+        final sound = CustomSound(id: id, name: rawName, filePath: destPath);
 
         await _storage.addCustomSound(sound);
         _customSounds.add(sound);

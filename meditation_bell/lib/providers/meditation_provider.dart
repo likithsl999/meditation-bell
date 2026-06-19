@@ -22,12 +22,13 @@ class MeditationProvider extends ChangeNotifier {
   // DateTime-based tracking — accurate even when ticks are throttled.
   DateTime? _sessionEndTime;
   DateTime? _nextBellTime;
-  DateTime? _pausedAt;  // set when paused, used to shift end/bell times on resume
+  DateTime? _pausedAt;
 
   int _remainingSeconds = 0;
 
-  // Captured at session start — sound stays consistent even if settings change mid-session.
-  String _activeBellSound = 'temple_bell';
+  // Captured at session start — stays consistent even if settings change mid-session.
+  String _activeBellSound = 'bell';
+  String? _activeBackgroundSound = 'rain';
   List<CustomSound> _activeCustomSounds = const [];
   bool _activeVibrate = false;
 
@@ -56,6 +57,7 @@ class MeditationProvider extends ChangeNotifier {
     required int intervalSeconds,
     required String bellSound,
     required bool vibrate,
+    String? backgroundSound,
     List<CustomSound> customSounds = const [],
   }) async {
     final now = DateTime.now();
@@ -71,15 +73,29 @@ class MeditationProvider extends ChangeNotifier {
     _state = MeditationState.running;
 
     _activeBellSound = bellSound;
+    _activeBackgroundSound = backgroundSound;
     _activeCustomSounds = customSounds;
     _activeVibrate = vibrate;
 
     await WakelockPlus.enable();
+
+    // Opening bell.
     await _audio.playBell(bellSound, customSounds: customSounds);
     if (vibrate) _triggerVibration();
 
+    // Start background sound loop.
+    await _startBackground();
+
     _startTicker();
     notifyListeners();
+  }
+
+  Future<void> _startBackground() async {
+    if (_activeBackgroundSound != null) {
+      await _audio.playBackground('audio/$_activeBackgroundSound.mp3');
+    } else {
+      await _audio.stopBackground();
+    }
   }
 
   void _startTicker() {
@@ -99,13 +115,12 @@ class MeditationProvider extends ChangeNotifier {
 
       _remainingSeconds = remaining;
 
-      // Ring the bell when the next scheduled bell time has passed.
+      // Ring the bell when the scheduled bell time passes.
       if (_nextBellTime != null && now.isAfter(_nextBellTime!)) {
-        // Advance to the next interval (catch-up if multiple ticks were missed).
         final intervalSec = _session!.intervalSeconds;
+        // Advance past all missed intervals (handles background throttling).
         while (_nextBellTime!.isBefore(now)) {
-          _nextBellTime =
-              _nextBellTime!.add(Duration(seconds: intervalSec));
+          _nextBellTime = _nextBellTime!.add(Duration(seconds: intervalSec));
         }
         await _audio.playBell(_activeBellSound,
             customSounds: _activeCustomSounds);
@@ -119,8 +134,12 @@ class MeditationProvider extends ChangeNotifier {
   Future<void> _finish() async {
     _ticker?.cancel();
     _state = MeditationState.finished;
+
+    // Closing bell, then stop background.
     await _audio.playBell(_activeBellSound, customSounds: _activeCustomSounds);
     if (_activeVibrate) _triggerVibration();
+    await _audio.stopBackground();
+
     await WakelockPlus.disable();
     await _storage.recordCompletedSession(_session!.durationMinutes);
     notifyListeners();
@@ -131,32 +150,30 @@ class MeditationProvider extends ChangeNotifier {
     _pausedAt = DateTime.now();
     _state = MeditationState.paused;
     _ticker?.cancel();
+    _audio.stopBackground();
     notifyListeners();
   }
 
   void resume() {
     if (_state != MeditationState.paused) return;
 
-    // Shift the end time and next bell time forward by the duration we were paused,
-    // so the timer remains accurate.
+    // Shift end time and next bell forward by however long we were paused.
     if (_pausedAt != null) {
       final pausedDuration = DateTime.now().difference(_pausedAt!);
-      if (_sessionEndTime != null) {
-        _sessionEndTime = _sessionEndTime!.add(pausedDuration);
-      }
-      if (_nextBellTime != null) {
-        _nextBellTime = _nextBellTime!.add(pausedDuration);
-      }
+      _sessionEndTime = _sessionEndTime?.add(pausedDuration);
+      _nextBellTime = _nextBellTime?.add(pausedDuration);
       _pausedAt = null;
     }
 
     _state = MeditationState.running;
+    _startBackground();
     _startTicker();
     notifyListeners();
   }
 
   Future<void> stop() async {
     _ticker?.cancel();
+    await _audio.stopBackground();
     _state = MeditationState.idle;
     _session = null;
     _remainingSeconds = 0;

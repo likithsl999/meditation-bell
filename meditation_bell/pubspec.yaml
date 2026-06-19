@@ -26,6 +26,8 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
+    - assets/audio/bell.mp3
+    - assets/audio/rain.mp3
     - assets/audio/temple_bell.mp3
     - assets/audio/singing_bowl.mp3
     - assets/audio/soft_chime.mp3

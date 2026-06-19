@@ -12,6 +12,9 @@ class StorageService {
   static const _keyCustomSounds = 'custom_sounds';
   static const _keyBellVolume = 'bell_volume';
   static const _keyBackgroundVolume = 'background_volume';
+  // 'none' stored as the string sentinel for "no background sound".
+  static const _keyBackgroundSound = 'background_sound';
+  static const _noBackground = 'none';
 
   final SharedPreferences _prefs;
 
@@ -46,7 +49,7 @@ class StorageService {
       final yesterday =
           _dateString(DateTime.now().subtract(const Duration(days: 1)));
       if (last == today) {
-        // Already recorded today — no change
+        // Already recorded today — no change.
       } else if (_dateString(lastDate) == yesterday) {
         await _prefs.setInt(_keyCurrentStreak, currentStreak + 1);
       } else {
@@ -57,14 +60,28 @@ class StorageService {
   }
 
   String _dateString(DateTime dt) =>
-      '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
+      '${dt.year}-${dt.month.toString().padLeft(2, '0')}-'
+      '${dt.day.toString().padLeft(2, '0')}';
 
   // ── Settings ──────────────────────────────────────────────────────────────
 
   bool get vibrationEnabled => _prefs.getBool(_keyVibrationEnabled) ?? true;
-  String get bellSound => _prefs.getString(_keyBellSound) ?? 'temple_bell';
+
+  /// Returns 'bell' as default if no value has been stored.
+  String get bellSound => _prefs.getString(_keyBellSound) ?? 'bell';
+
   double get bellVolume => _prefs.getDouble(_keyBellVolume) ?? 1.0;
-  double get backgroundVolume => _prefs.getDouble(_keyBackgroundVolume) ?? 0.0;
+
+  /// Background volume defaults to 0.5 now that rain is the default sound.
+  double get backgroundVolume => _prefs.getDouble(_keyBackgroundVolume) ?? 0.5;
+
+  /// Returns 'rain' if never saved; returns null when the user has chosen none.
+  String? get backgroundSound {
+    final raw = _prefs.getString(_keyBackgroundSound);
+    if (raw == null) return 'rain'; // first-run default
+    if (raw == _noBackground) return null;
+    return raw;
+  }
 
   Future<void> setVibrationEnabled(bool value) =>
       _prefs.setBool(_keyVibrationEnabled, value);
@@ -74,6 +91,8 @@ class StorageService {
       _prefs.setDouble(_keyBellVolume, value);
   Future<void> setBackgroundVolume(double value) =>
       _prefs.setDouble(_keyBackgroundVolume, value);
+  Future<void> setBackgroundSound(String? value) =>
+      _prefs.setString(_keyBackgroundSound, value ?? _noBackground);
 
   // ── Custom sounds ─────────────────────────────────────────────────────────
 

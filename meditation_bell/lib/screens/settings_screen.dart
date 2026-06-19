@@ -25,7 +25,6 @@ class SettingsScreen extends StatelessWidget {
             // ── Volume ─────────────────────────────────────────────────────
             _SectionLabel('Volume'),
             const SizedBox(height: 16),
-
             _VolumeRow(
               icon: Icons.notifications_rounded,
               label: 'Bell',
@@ -35,7 +34,7 @@ class SettingsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             _VolumeRow(
-              icon: Icons.forest_rounded,
+              icon: Icons.water_drop_rounded,
               label: 'Ambient',
               value: settings.backgroundVolume,
               onChanged: (v) => settings.setBackgroundVolume(v),
@@ -43,7 +42,29 @@ class SettingsScreen extends StatelessWidget {
 
             const SizedBox(height: 32),
 
-            // ── Bell Sound (built-in) ──────────────────────────────────────
+            // ── Background Sound ───────────────────────────────────────────
+            _SectionLabel('Background Sound'),
+            const SizedBox(height: 4),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Text(
+                'Plays in a loop throughout your session.',
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(color: colorScheme.onSurfaceVariant),
+              ),
+            ),
+            ...AppSettings.backgroundSoundOptions.map((key) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _BackgroundSoundTile(
+                    soundKey: key,
+                    selected: settings.backgroundSound == key,
+                    onTap: () => settings.setBackgroundSound(key),
+                  ),
+                )),
+
+            const SizedBox(height: 32),
+
+            // ── Bell Sound ─────────────────────────────────────────────────
             _SectionLabel('Bell Sound'),
             const SizedBox(height: 12),
             ...AppSettings.bellSoundOptions.map((key) => Padding(
@@ -102,7 +123,7 @@ class SettingsScreen extends StatelessWidget {
 
             const SizedBox(height: 32),
 
-            // ── Custom sounds ──────────────────────────────────────────────
+            // ── Custom Sounds ──────────────────────────────────────────────
             Row(
               children: [
                 Expanded(child: _SectionLabel('Custom Sounds')),
@@ -115,7 +136,6 @@ class SettingsScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-
             OutlinedButton.icon(
               onPressed:
                   settings.importing ? null : () => settings.importSound(),
@@ -127,7 +147,6 @@ class SettingsScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12)),
               ),
             ),
-
             if (settings.importError != null) ...[
               const SizedBox(height: 8),
               Text(
@@ -136,7 +155,6 @@ class SettingsScreen extends StatelessWidget {
                     ?.copyWith(color: colorScheme.error),
               ),
             ],
-
             if (settings.customSounds.isEmpty) ...[
               const SizedBox(height: 20),
               Text(
@@ -158,6 +176,75 @@ class SettingsScreen extends StatelessWidget {
                   ?.copyWith(color: colorScheme.onSurfaceVariant),
             ),
             const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Background sound tile ─────────────────────────────────────────────────────
+
+class _BackgroundSoundTile extends StatelessWidget {
+  final String? soundKey;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _BackgroundSoundTile({
+    required this.soundKey,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final label = AppSettings.backgroundSoundLabel(soundKey);
+    final icon = soundKey == null
+        ? Icons.block_rounded
+        : Icons.water_drop_rounded;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        decoration: BoxDecoration(
+          color: selected
+              ? colorScheme.primaryContainer
+              : colorScheme.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: selected ? colorScheme.primary : Colors.transparent,
+            width: 1.5,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              size: 20,
+              color: selected
+                  ? colorScheme.onPrimaryContainer
+                  : colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: selected
+                      ? colorScheme.onPrimaryContainer
+                      : colorScheme.onSurface,
+                  fontWeight:
+                      selected ? FontWeight.w600 : FontWeight.w400,
+                  fontSize: 15,
+                ),
+              ),
+            ),
+            if (selected)
+              Icon(Icons.check_rounded,
+                  size: 20, color: colorScheme.onPrimaryContainer),
           ],
         ),
       ),
@@ -266,7 +353,7 @@ class _SectionLabel extends StatelessWidget {
   }
 }
 
-// ── Sound tile ────────────────────────────────────────────────────────────────
+// ── Bell sound tile ───────────────────────────────────────────────────────────
 
 class _SoundTile extends StatelessWidget {
   final String label;
@@ -288,8 +375,7 @@ class _SoundTile extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding:
-            const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         decoration: BoxDecoration(
           color: selected
               ? colorScheme.primaryContainer
