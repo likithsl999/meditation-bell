@@ -430,7 +430,6 @@ class _CustomSoundRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final settings = context.read<SettingsProvider>();
     final colorScheme = Theme.of(context).colorScheme;
     final theme = Theme.of(context);
 
@@ -447,7 +446,7 @@ class _CustomSoundRow extends StatelessWidget {
             icon: Icon(Icons.play_circle_outline_rounded,
                 color: colorScheme.primary),
             tooltip: 'Preview',
-            onPressed: () => settings.previewSound(sound),
+            onPressed: () => context.read<SettingsProvider>().previewSound(sound),
           ),
           Expanded(
             child: Text(
@@ -461,13 +460,13 @@ class _CustomSoundRow extends StatelessWidget {
             icon: Icon(Icons.edit_outlined,
                 size: 20, color: colorScheme.onSurfaceVariant),
             tooltip: 'Rename',
-            onPressed: () => _showRenameDialog(context, settings),
+            onPressed: () => _showRenameDialog(context, context.read<SettingsProvider>()),
           ),
           IconButton(
             icon: Icon(Icons.delete_outline_rounded,
                 size: 20, color: colorScheme.error),
             tooltip: 'Delete',
-            onPressed: () => _showDeleteDialog(context, settings),
+            onPressed: () => _showDeleteDialog(context, context.read<SettingsProvider>()),
           ),
         ],
       ),
