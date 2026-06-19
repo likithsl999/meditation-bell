@@ -184,9 +184,67 @@ class _HomeScreenState extends State<HomeScreen> {
                       borderRadius: BorderRadius.circular(16)),
                 ),
               ),
+
+              const SizedBox(height: 32),
+              const _FooterCard(),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _FooterCard extends StatelessWidget {
+  const _FooterCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: colorScheme.primary.withValues(alpha: 0.15),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.favorite_rounded,
+                  size: 16, color: colorScheme.error),
+              const SizedBox(width: 8),
+              Text(
+                'Made by Likith',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  color: colorScheme.onSurface,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Ok, naluguru tq to smile, theonlyunr, Sweety 😄\n\n'
+            'Idea bagunde kada? Don\'t see spelling 😅\n\n'
+            'Now meditate. This app is for that only!\n\n'
+            'If you reached the end of this note, you just spent more time reading than meditating 😂\n\n'
+            'Go meditate now.\n\n'
+            'And please give a review 🙏',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+              height: 1.6,
+            ),
+          ),
+        ],
       ),
     );
   }
