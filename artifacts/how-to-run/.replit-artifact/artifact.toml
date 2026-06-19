@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Meditation Bell — How to Run"
+version = "1.0.0"
+id = "artifacts/how-to-run"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21821
+
+[services.development]
+run = "pnpm --filter @workspace/how-to-run run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/how-to-run", "run", "build" ]
+publicDir = "artifacts/how-to-run/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21821"
+BASE_PATH = "/"
