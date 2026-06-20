@@ -19,13 +19,13 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.example.meditation_bell"
-        // file_picker requires API 21; READ_MEDIA_AUDIO available on 33+
-        minSdk 21
-        targetSdk flutter.targetSdkVersion
-        versionCode flutterVersionCode.toInteger()
-        versionName flutterVersionName
-    }
+    applicationId "com.example.meditation_bell"
+    minSdk 21
+    targetSdk flutter.targetSdkVersion
+
+    versionCode 1
+    versionName "1.0.0"
+}
 
     buildTypes {
         release {
