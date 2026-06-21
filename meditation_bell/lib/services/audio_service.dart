@@ -24,7 +24,6 @@ class AudioService {
         audioFocus: AndroidAudioFocus.gain,
       ),
       iOS: AudioContextIOS(
-        defaultToSpeaker: false,
         category: AVAudioSessionCategory.playback,
         options: {
           AVAudioSessionOptions.allowBluetooth,
