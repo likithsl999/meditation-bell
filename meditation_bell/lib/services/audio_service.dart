@@ -25,10 +25,10 @@ class AudioService {
       ),
       iOS: AudioContextIOS(
         category: AVAudioSessionCategory.playback,
-        options: {
-          AVAudioSessionOptions.allowBluetooth,
-          AVAudioSessionOptions.allowBluetoothA2DP,
-        },
+        options: [
+  AVAudioSessionOptions.allowBluetooth,
+  AVAudioSessionOptions.allowBluetoothA2DP,
+],
       ),
     );
     await AudioPlayer.global.setAudioContext(ctx);
